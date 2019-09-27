@@ -74,15 +74,13 @@ int parse_lines(){
 int print_blocks(){
 	
 	for (int i = 0; i<num_blocks;i++){
-		printf("Block %d:\n",i);
-		printf("name: %s\n",blocks[i]->name);
-		printf("dep_count: %d\n",blocks[i]->dep_count);
+		//printf("Block %d:\n",i);
+		printf("target '%s' has %d dependencies and %d recipes\n",blocks[i]->name,blocks[i]->dep_count,blocks[i]->recipe_count);
 		for (int j = 0; j<blocks[i]->dep_count;j++){	
-			printf("depend[%d]%s\n",j,blocks[i]->depend[j]);
+			printf("Dependency %d is %s\n",j,blocks[i]->depend[j]);
 		}
-		printf("recipe_count: %d\n",blocks[i]->recipe_count);
 		for (int j = 0; j<blocks[i]->recipe_count;j++){	
-			printf("recipe[%d]%s\n",j,blocks[i]->recipe[j]);
+			printf("Recipe %d is %s\n",j,blocks[i]->recipe[j]);
 		}
 	}
 }
@@ -112,35 +110,47 @@ int process_file(char *fname)
 //Validate the input arguments, bullet proof the program
 int main(int argc, char *argv[]) 
 {
+
+	char dash_p = 0;
+	char dash_r = 0;
+	char fname[100];
+	char fn = 0;
+	char target[100];
+	char tg = 0;
+
+	if(argc < 2){
+		printf("missing argument\n");
+  		exit(-1);
+	}
+
+	if (0 == strcmp(argv[1], "-p")) {
+   		dash_p = 1;
+	}else if (0 == strcmp(argv[1], "-r"){
+   		dash_r = 1;
+	}else {
+		fname = argv[1];
+		fn = 1;
+	}
+
+	if(argc > 2){
+	
+		if(!fn){
+			fname = argv[2];
+			fn = 1;
+		}else{
+			target = argv[2];
+			tg = 1;	
+		}
+	}
+
+	if(argc > 3){
+		if(!)
+	}
+	
 	process_file(argv[1]);
 	parse_lines();
 	print_blocks();
 
-	//$./mymake Makefile
-	//Similarly account for -r flag
 	
-	/*
-	if (argc == 2 && strncmp(argv[1], "-p", 2)) {
-		process_file(argv[1]); 
-		//print the target dependencies and recipies in the makefile
-
-	}else if (argc == 2 && strncmp(argv[1], "-r", 2)) {
-		process_file(argv[1]); 
-		//print the recipe order
-	}
-
-	if (argc == 3) {
-		//$./mymake Makefile target
-		if (strncmp(argv[1], "-p", 2) && !process_file(argv[1])) {
-			//TODO
-			
-		} else if (!strncmp(argv[1], "-p", 2)) {
-			//$./mymake -p Makefile 
-			if (!process_file(argv[2])) {
-				//TODO
-			}
-		}
-	}
-	*/
 	exit(EXIT_SUCCESS);
 }
