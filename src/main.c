@@ -14,76 +14,91 @@ target *blocks[MAX_TARGETS];
 int num_recipies;
 char * recipies[100];
 
+/*
+int free_block(target * block){
+	if(block == NULL){
+		return 0;
+	}
+	for (int i = 0; i < block->dep_count){
+		
+	}
+	return 0;
+}
+*/
+
 int execute_recipes(){
 	for (int i = 0; i < num_recipies; i++){
-
-		char str[100] = "";
+		//make a copy of the recipe to tokenize
+		char * str =  malloc(sizeof(char) * (strlen(recipies[i])));
 		strcpy(str,recipies[i]);
 		char * token  = strtok(str, " ");
-		char * tokens[100];
+		//make an array to hold tokens
+		char * tokens[MAX_PARM] = {};
 		int j = 0;
 		while(token != NULL){
-			//printf("%s\n",token);
 			tokens[j] = token;
+			//get the next token
 			token = strtok(NULL, " ");
 			j++;
 		}
-
+		
+		//create a child process
 		pid_t pid = fork();
 		if(pid == -1){
 			//error
 		}else if (pid == 0){
-			//child
+			//child, execute the arguments in tokens
 			execvp(tokens[0],tokens);
 		}else{
-			//parent
+			//parent, wait for child to finish
 			wait(NULL);
 		}
+		free(str);
 	}
 	return 0;
 }
 
 int parse_lines(){
+	//points to tokens in lines
 	char * ptr;
-	
-
-	//int n_array = (sizeof (lines) / sizeof (const char *));
+	//counts the number of dependencies for a target
 	int c = 0;
+	//counts the number of recipies for a target
 	int r = 0;
-	int e = -1;
-	target * cur_target = malloc(sizeof(target));
-	target * cur_depend = malloc(sizeof(char *)*MAX_DEP);
-	target * cur_recipe = malloc(sizeof(char *)*MAX_RECIPES_PT);
+	//counts the current block number
+	int e = 0;
+
+	//tracks whether we've found a target yet
+	char found = 0;
+
+	target * cur_target;
 	for (int i = 0; i < MAX_LINES; i++) {
-		char line[200];
+		
+		char line[LINE_SIZE];
 		strcpy(line,lines[i]);
 		if(strchr(lines[i],':')!=NULL){
-			//this line introduces a new target
+			//we've hit a new block, get the target
 			ptr = strtok(line, ":");
 			if(ptr != NULL){
-				
-				if(e>=0){
-					//target * cpy = cur_target;
+				if(found){
+					//save the last block to blocks
 					cur_target->dep_count = c;
 					cur_target->recipe_count = r;
 					cur_target->visited = 0;
 					blocks[e] = cur_target;
-					cur_target = malloc(sizeof(target));
-					cur_depend = malloc(sizeof(char *)*MAX_DEP);
-					cur_recipe = malloc(sizeof(char *)*MAX_RECIPES_PT);
-				}
-				//pointer is the target
-				//char name[100];
-				cur_target->name = malloc(sizeof(char) * 100);
-				strcpy(cur_target->name,ptr);
-				e++;
-				//printf("name: %s\n",ptr);		
+					e++;
+				}else{found=1;}
+
+				//starting a new block
+				cur_target = malloc(sizeof(target));
+				cur_target->name = malloc(sizeof(char) * (strlen(ptr)));
+				strcpy(cur_target->name,ptr);		
 				ptr = strtok(NULL, " \n");
 			}
 			c = 0;
 			while(ptr!=NULL){
 				//add dependency
-				cur_target->depend[c] = malloc(sizeof(char) * 100);
+				cur_target->depend[c] = malloc(sizeof(char) * (strlen(ptr)));
 				strcpy(cur_target->depend[c],ptr);
 				//printf("depend[%d]: %s\n",c, ptr);
 				ptr = strtok(NULL, " \n");
@@ -94,17 +109,21 @@ int parse_lines(){
 		}else if(strchr(lines[i],'\t')!=NULL){
 			ptr = strtok(line, "\t\n");
 			//add recipe
-			cur_target->recipe[r] = malloc(sizeof(char) * 100);
+			cur_target->recipe[r] = malloc(sizeof(char) * (strlen(ptr)));
 			strcpy(cur_target->recipe[r],ptr);
 			//printf("recipe[%d]: %s\n",r, ptr);
 			r++;
 		}
     	}
+
+	//gone through all lines, add curent block to blocks
 	cur_target->dep_count = c;
 	cur_target->recipe_count = r;
 	cur_target->visited = 0;
 	blocks[e] = cur_target;
 	num_blocks = e+1;
+
+	//return success
 	return 0;
 }
 int print_blocks(){
@@ -148,26 +167,12 @@ int process_file(char *fname)
 //Validate the input arguments, bullet proof the program
 int main(int argc, char *argv[]) 
 {
-
-	//char dash_p = 0;
-	//char dash_r = 0;
-	//char fname[100];
-	//char fn = 0;
-	//char target[100];
-	//char tg = 0;
-
-
 	process_file(argv[1]);
 	parse_lines();
+	print_blocks();
 
-	//print_blocks();
-
-	//recipies[0] = "echo hello world";
-	//recipies[1] = "echo test123456789";
-	//recipies[2] = "echo testing 2 here is a test, here are words";
-
-	num_recipies = 3;
-	execute_recipes();
+	//num_recipies = 3;
+	//execute_recipes();
 	
 	exit(EXIT_SUCCESS);
 }
