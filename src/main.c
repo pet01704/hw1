@@ -1,11 +1,47 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include "graph.h"
 #include "dfs_stack.h"
+
 int num_blocks;
 target *blocks[MAX_TARGETS];
+
+int num_recipies;
+char * recipies[100];
+
+int execute_recipes(){
+	for (int i = 0; i < num_recipies; i++){
+
+		char str[100] = "";
+		strcpy(str,recipies[i]);
+		char * token  = strtok(str, " ");
+		char * tokens[100];
+		int j = 0;
+		while(token != NULL){
+			//printf("%s\n",token);
+			tokens[j] = token;
+			token = strtok(NULL, " ");
+			j++;
+		}
+
+		pid_t pid = fork();
+		if(pid == -1){
+			//error
+		}else if (pid == 0){
+			//child
+			execvp(tokens[0],tokens);
+		}else{
+			//parent
+			wait(NULL);
+		}
+	}
+	return 0;
+}
 
 int parse_lines(){
 	char * ptr;
@@ -83,6 +119,8 @@ int print_blocks(){
 			printf("Recipe %d is %s\n",j,blocks[i]->recipe[j]);
 		}
 	}
+
+	return 0;
 }
 
 //Parse the input makefile to determine targets, dependencies, and recipes
@@ -111,46 +149,25 @@ int process_file(char *fname)
 int main(int argc, char *argv[]) 
 {
 
-	char dash_p = 0;
-	char dash_r = 0;
-	char fname[100];
-	char fn = 0;
-	char target[100];
-	char tg = 0;
+	//char dash_p = 0;
+	//char dash_r = 0;
+	//char fname[100];
+	//char fn = 0;
+	//char target[100];
+	//char tg = 0;
 
-	if(argc < 2){
-		printf("missing argument\n");
-  		exit(-1);
-	}
 
-	if (0 == strcmp(argv[1], "-p")) {
-   		dash_p = 1;
-	}else if (0 == strcmp(argv[1], "-r"){
-   		dash_r = 1;
-	}else {
-		fname = argv[1];
-		fn = 1;
-	}
-
-	if(argc > 2){
-	
-		if(!fn){
-			fname = argv[2];
-			fn = 1;
-		}else{
-			target = argv[2];
-			tg = 1;	
-		}
-	}
-
-	if(argc > 3){
-		if(!)
-	}
-	
 	process_file(argv[1]);
 	parse_lines();
-	print_blocks();
 
+	//print_blocks();
+
+	//recipies[0] = "echo hello world";
+	//recipies[1] = "echo test123456789";
+	//recipies[2] = "echo testing 2 here is a test, here are words";
+
+	num_recipies = 3;
+	execute_recipes();
 	
 	exit(EXIT_SUCCESS);
 }
