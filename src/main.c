@@ -6,7 +6,7 @@
 #include <sys/wait.h>
 
 #include "graph.h"
-
+// this comment should be removed
 int num_blocks;
 target *blocks[MAX_TARGETS];
 
