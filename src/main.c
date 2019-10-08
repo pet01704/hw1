@@ -12,37 +12,76 @@ int num_blocks;
 target *blocks[MAX_TARGETS];
 
 int num_recipies;
-char * recipies[100];
+char * recipies[MAX_RECIPES_PT*MAX_TARGETS];
 
-/*
+
 int free_block(target * block){
 	if(block == NULL){
 		return 0;
 	}
-	for (int i = 0; i < block->dep_count){
-		
+	for (int i = 0; i < block->dep_count;i++){
+		free(block->depend[i]);
+	}for (int i = 0; i < block->recipe_count;i++){
+		free(block->recipe[i]);
 	}
+	free(block->name);
+	free(block);
 	return 0;
 }
-*/
+
 
 int execute_recipes(){
 	for (int i = 0; i < num_recipies; i++){
-		//make a copy of the recipe to tokenize
+		//make a copy of the line
 		char * str =  malloc(sizeof(char) * (strlen(recipies[i])));
 		strcpy(str,recipies[i]);
-		char * token  = strtok(str, " ");
-		//make an array to hold tokens
-		char * tokens[MAX_PARM] = {};
-		int j = 0;
-		while(token != NULL){
-			tokens[j] = token;
-			//get the next token
-			token = strtok(NULL, " ");
-			j++;
-		}
+
+		//split on comas
+		//then tokenize each command
+
+			//point to the first token
+			char * token  = strtok(str, " ");
+			//make an array to hold tokens
+			char * tokens[MAX_PARM] = {};
+			int j = 0;
+			while(token != NULL){
+				tokens[j] = token;
+				//get the next token
+				token = strtok(NULL, " ");
+				j++;
+			}
 		
+		num_parallel = 0;
+		
+		pid_t pid = fork();			
+		if(pid == -1){
+			//error
+		}else if (pid == 0){
+			
+			//child, execute the arguments in tokens
+			for(int j = 0; j<num_parallel; j++){
+				pid_t pid2 = fork();
+				if(pid == -1){
+					//error
+				}else if (pid == 0){
+					//child
+				}else{
+					//parent
+					
+				}
+			}
+			execvp(tokens[0],tokens);
+			
+		}else{
+			//parent, wait for child to finish
+			//wait for all children to finish
+			wait(NULL);
+		}
+
+
+	/*
 		//create a child process
+		//for each parallel command
 		pid_t pid = fork();
 		if(pid == -1){
 			//error
@@ -51,9 +90,14 @@ int execute_recipes(){
 			execvp(tokens[0],tokens);
 		}else{
 			//parent, wait for child to finish
+			//wait for all children to finish
 			wait(NULL);
 		}
+	*/
+
+		//free str
 		free(str);
+
 	}
 	return 0;
 }
@@ -138,7 +182,6 @@ int print_blocks(){
 			printf("Recipe %d is %s\n",j,blocks[i]->recipe[j]);
 		}
 	}
-
 	return 0;
 }
 
@@ -170,9 +213,14 @@ int main(int argc, char *argv[])
 	process_file(argv[1]);
 	parse_lines();
 	print_blocks();
-
-	//num_recipies = 3;
+	
+	//recipies = top_sort();
+	//
 	//execute_recipes();
+
+	for (int i = 0; i< num_blocks;i++){
+		free_block(blocks[i]);
+	}
 	
 	exit(EXIT_SUCCESS);
 }
