@@ -6,7 +6,6 @@
 #include <sys/wait.h>
 
 #include "graph.h"
-#include "dfs_stack.h"
 
 int num_blocks;
 target *blocks[MAX_TARGETS];
@@ -14,12 +13,13 @@ target *blocks[MAX_TARGETS];
 int num_recipies;
 char * recipies[MAX_RECIPES_PT*MAX_TARGETS];
 
-
+//frees the memory alocated for everything in the target pointer array, blocks.
+//no arguments, returns 0 on success, 1 if found a NULL pointer in blocks
 int free_blocks(){
 	for(int i = 0; i<num_blocks;i++){
 		target * block = blocks[i];
 		if(block == NULL){
-			return 0;
+			return 1;
 		}
 		for (int i = 0; i < block->dep_count;i++){
 			free(block->depend[i]);
@@ -31,6 +31,41 @@ int free_blocks(){
 	}
 	return 0;
 }
+
+//executes the recipes in the char pointer array, recipies
+//no arguments, returns 0 on success, 1 if fork error
+int execute_recipes(){
+	for (int i = 0; i < num_recipies; i++){
+		//make a copy of the recipe to tokenize
+		char * str =  malloc(sizeof(char) * (strlen(recipies[i])));
+		strcpy(str,recipies[i]);
+		char * token  = strtok(str, " ");
+		//make an array to hold args
+		char * args[MAX_PARM] = {};
+		int j = 0;
+		while(token != NULL){
+			args[j] = token;
+			//get the next token (argument)
+			token = strtok(NULL, " ");
+			j++;
+		}
+		//create a child process
+		pid_t pid = fork();
+		if(pid == -1){
+			//error
+			return 1;
+		}else if (pid == 0){
+			//child, execute the arguments in args
+			execvp(args[0],args);
+		}else{
+			//parent, wait for child to finish
+			wait(NULL);
+		}
+		free(str);
+	}
+	return 0;
+}
+
 
 /*
 int execute_recipes(){
@@ -106,23 +141,25 @@ int execute_recipes(){
 }
 */
 
-int parse_lines(){
-	//points to tokens in lines
-	char * ptr;
+
+//populates the target pointer array, blocks, from the char pointer array, lines
+//no arguments, no return value
+void parse_lines(){
 	//counts the number of dependencies for a target
 	int c = 0;
 	//counts the number of recipies for a target
 	int r = 0;
 	//counts the current block number
 	int e = 0;
-
 	//tracks whether we've found a target yet
 	char found = 0;
-
+	//current target to add recipes, dependencies, etc. to
 	target * cur_target;
+
+	char * ptr;
 	for (int i = 0; i < MAX_LINES; i++) {
-		
 		char line[LINE_SIZE];
+		//copy current line to tokenize
 		strcpy(line,lines[i]);
 		if(strchr(lines[i],':')!=NULL){
 			//we've hit a new block, get the target
@@ -136,7 +173,6 @@ int parse_lines(){
 					blocks[e] = cur_target;
 					e++;
 				}else{found=1;}
-
 				//starting a new block
 				cur_target = malloc(sizeof(target));
 				cur_target->name = malloc(sizeof(char) * (strlen(ptr)));
@@ -145,39 +181,34 @@ int parse_lines(){
 			}
 			c = 0;
 			while(ptr!=NULL){
-				//add dependency
+				//we've found a new dependency for the current block
 				cur_target->depend[c] = malloc(sizeof(char) * (strlen(ptr)));
 				strcpy(cur_target->depend[c],ptr);
-				//printf("depend[%d]: %s\n",c, ptr);
 				ptr = strtok(NULL, " \n");
 				c++;
 			}
-			//reset recipe counter to 0
 			r=0;
 		}else if(strchr(lines[i],'\t')!=NULL){
+			//we've found a new recipe for the current block
 			ptr = strtok(line, "\t\n");
-			//add recipe
 			cur_target->recipe[r] = malloc(sizeof(char) * (strlen(ptr)));
 			strcpy(cur_target->recipe[r],ptr);
-			//printf("recipe[%d]: %s\n",r, ptr);
 			r++;
 		}
     	}
-
 	//gone through all lines, add curent block to blocks
 	cur_target->dep_count = c;
 	cur_target->recipe_count = r;
 	cur_target->visited = 0;
 	blocks[e] = cur_target;
 	num_blocks = e+1;
-
-	//return success
-	return 0;
+	return;
 }
-int print_blocks(){
-	
+
+//prints the current blocks to standard output
+//no arguments, no return value
+void print_blocks(){
 	for (int i = 0; i<num_blocks;i++){
-		//printf("Block %d:\n",i);
 		printf("target '%s' has %d dependencies and %d recipes\n",blocks[i]->name,blocks[i]->dep_count,blocks[i]->recipe_count);
 		for (int j = 0; j<blocks[i]->dep_count;j++){	
 			printf("Dependency %d is %s\n",j,blocks[i]->depend[j]);
@@ -186,11 +217,11 @@ int print_blocks(){
 			printf("Recipe %d is %s\n",j,blocks[i]->recipe[j]);
 		}
 	}
-	return 0;
+	return;
 }
 
-//Parse the input makefile to determine targets, dependencies, and recipes
 
+//Parse the input makefile to determine targets, dependencies, and recipes
 int process_file(char *fname)
 {
 	FILE* fp = fopen(fname, "r");
