@@ -19,5 +19,10 @@ typedef struct target_block {
 } target;
 
 char lines[MAX_LINES][LINE_SIZE];
+int num_blocks;
+target *blocks[MAX_TARGETS];
+int total_num_recipies;
+char * sorted_recipies[MAX_RECIPES_PT*MAX_TARGETS];
 
 #endif
+
