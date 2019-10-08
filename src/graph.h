@@ -25,4 +25,3 @@ int total_num_recipies;
 char * sorted_recipies[MAX_RECIPES_PT*MAX_TARGETS];
 
 #endif
-
