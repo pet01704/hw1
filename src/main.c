@@ -15,21 +15,24 @@ int num_recipies;
 char * recipies[MAX_RECIPES_PT*MAX_TARGETS];
 
 
-int free_block(target * block){
-	if(block == NULL){
-		return 0;
+int free_blocks(){
+	for(int i = 0; i<num_blocks;i++){
+		target * block = blocks[i];
+		if(block == NULL){
+			return 0;
+		}
+		for (int i = 0; i < block->dep_count;i++){
+			free(block->depend[i]);
+		}for (int i = 0; i < block->recipe_count;i++){
+			free(block->recipe[i]);
+		}
+		free(block->name);
+		free(block);
 	}
-	for (int i = 0; i < block->dep_count;i++){
-		free(block->depend[i]);
-	}for (int i = 0; i < block->recipe_count;i++){
-		free(block->recipe[i]);
-	}
-	free(block->name);
-	free(block);
 	return 0;
 }
 
-
+/*
 int execute_recipes(){
 	for (int i = 0; i < num_recipies; i++){
 		//make a copy of the line
@@ -93,7 +96,7 @@ int execute_recipes(){
 			//wait for all children to finish
 			wait(NULL);
 		}
-	*/
+	
 
 		//free str
 		free(str);
@@ -101,6 +104,7 @@ int execute_recipes(){
 	}
 	return 0;
 }
+*/
 
 int parse_lines(){
 	//points to tokens in lines
@@ -218,9 +222,7 @@ int main(int argc, char *argv[])
 	//
 	//execute_recipes();
 
-	for (int i = 0; i< num_blocks;i++){
-		free_block(blocks[i]);
-	}
+	free_blocks();
 	
 	exit(EXIT_SUCCESS);
 }
